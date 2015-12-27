@@ -16,8 +16,8 @@ def scrapeStation(station):
             table = soup.find(id='historyTable').find_all('span', class_='wx-value')
 
             meanTemp = table[0].text
-            maxTemp = table[1].text
-            minTemp = table[2].text
+            maxTemp = table[2].text
+            minTemp = table[5].text
 
             if j == 31:
                 print ("year: "+str(j), meanTemp)
