@@ -4,11 +4,11 @@ from bs4 import BeautifulSoup
 data = []
 
 def scrapeStation(station):
-    url = 'http://www.wunderground.com/history/airport/{}/{}/12/{}/DailyHistory.html'
+    url = 'http://www.wunderground.com/history/airport/{}/2015/{}/{}/DailyHistory.html'
     day = range(1,32)
-    year = range(1948, 2015)
+    month = range(1,12)
 
-    for i in year:
+    for i in month:
         for j in day:
             formattedURL = url.format(station, i, j)
             page = requests.get(formattedURL)
@@ -18,15 +18,31 @@ def scrapeStation(station):
             meanTemp = table[0].text
             maxTemp = table[2].text
             minTemp = table[5].text
+            #averageMeanTemp
+            averageMaxTemp = table[3].text
+            averageMinTemp = table[6].text
+            recordMaxTemp = table[4].text
+            recordMinTemp = table[7].text
+            #Add in years for record max/min
 
-            if j == 31:
-                print ("year: "+str(j), meanTemp)
-            data.append({"year":i, "day":j, "meanTemp":meanTemp, "maxTemp":maxTemp, "minTemp":minTemp})
+            print("Month: "+str(i) + ", Day: " + str(j))
+
+            data.append({
+                "month":i,
+                "day":j,
+                "meanTemp":meanTemp,
+                "maxTemp":maxTemp,
+                "minTemp":minTemp,
+                "averageMaxTemp":averageMaxTemp,
+                "averageMinTemp":averageMinTemp,
+                "recordMaxTemp":recordMaxTemp,
+                "recordMinTemp":recordMinTemp
+            })
 
 scrapeStation("KIOW")
 
-with open("december-scraped-IC.csv", "wb") as outfile:
-    attrNames = ["day", "year", "meanTemp", "maxTemp", "minTemp"]
+with open("2015-scraped-IC.csv", "wb") as outfile:
+    attrNames = data[0].keys()
     writer = csv.DictWriter(outfile, fieldnames=attrNames)
 
     writer.writeheader()
