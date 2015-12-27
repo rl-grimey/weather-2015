@@ -3,15 +3,106 @@
     <meta charset='utf-8'>
     <title>Iowa City Weather in Historical Perspective</title>
 
-    <script src="js/d3.js"></script>
-
+    <script src="//d3js.org/d3.v3.min.js"></script>
     <style>
+        body {
+            font: 10px sans-serif;
+        }
 
+        .axis line,
+        .axis path {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
     </style>
 </head>
 <body>
     <script>
+    var margin = {left:25, top:25, right:25, bottom:25},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    var dayScale = d3.scale.ordinal().rangeRoundBands([0, width]),
+        tempScale = d3.scale.linear().range([height, 0]),
+        colorScale = d3.scale.quantize().range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+
+    var dayAxis = d3.svg.axis().orient("bottom").scale(dayScale),
+        tempAxis = d3.svg.axis().orient("left").scale(tempScale);
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    d3.csv("data/2015-scraped-IC.csv", function(data) {
+
+        data.forEach(function(d) {
+            d.month = +d.month;
+            d.day = +d.day;
+            d.date = new Date(2015, d.month -1, d.day -1);
+
+            d.meanTemp = +d.meanTemp;
+            d.maxTemp = +d.maxTemp;
+            d.minTemp = +d.minTemp;
+            d.averageMaxTemp = +d.averageMaxTemp;
+            d.averageMinTemp = +d.averageMinTemp;
+            d.recordMaxTemp = +d.recordMaxTemp;
+            d.recordMinTemp = +d.recordMinTemp;
+        });
+
+        dayScale.domain(data.map(function(d) { return d.date; }));
+        svg.append("g")
+            .attr("class", "axis")
+            .attr("transform", "translate(0," + height +")")
+            .call(dayAxis);
+        tempScale.domain([d3.min(data, function(d) { return d.recordMinTemp; }), d3.max(data, function(d) { return d.recordMaxTemp; })]);
+        svg.append("g")
+            .attr("class", "axis")
+            .call(tempAxis);
+        colorScale.domain([d3.min(data, function(d) { return d.recordMinTemp; }), d3.max(data, function(d) { return d.recordMaxTemp; })]);
+        
+        //Grouping
+        var days = svg.selectAll(".day")
+            .data(data)
+            .enter()
+            .append("g")
+            .attr("class", "g")
+            .attr("transform", function(d) { return "translate(" + dayScale(d.date) +",0)"; });
+
+        days.append("title")
+            .text(function(d) { return d.date; });
+        
+        //Record
+        days.append("rect")
+            .attr("width", dayScale.rangeBand())
+            .attr("y", function(d) { return tempScale(d.recordMaxTemp); })
+            .attr("height", function(d) {
+                return tempScale(d.recordMinTemp) - tempScale(d.recordMaxTemp);
+            })
+            .style("fill", "#C3BCA5");
 
 
+        //Average
+        days.append("rect")
+            .attr("width", dayScale.rangeBand())
+            .attr("y", function(d) { return tempScale(d.averageMaxTemp); })
+            .attr("height", function(d) {
+                return tempScale(d.averageMinTemp) - tempScale(d.averageMaxTemp);
+            })
+            .style("fill", "#9b9281"); 
+
+        //Actual
+        days.append("rect")
+            .attr("width", dayScale.rangeBand())
+            .attr("y", function(d) { return tempScale(d.maxTemp); })
+            .attr("height", function(d) {
+                return tempScale(d.minTemp) - tempScale(d.maxTemp);
+            })
+        .style("fill", function(d) { return colorScale(d.meanTemp); });
+        
+
+    });
     </script>
 </body>
