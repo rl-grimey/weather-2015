@@ -15,6 +15,11 @@
             stroke: #000;
             shape-rendering: crispEdges;
         }
+
+        .chartTitle {
+            font: 16px sans-serif;
+            font-weight: bolder;
+        }
     </style>
 </head>
 <body>
@@ -24,7 +29,7 @@
         height = 500 - margin.top - margin.bottom;
 
     var dayScale = d3.scale.ordinal().rangeRoundBands([0, width], 0.5),
-        timeScale = d3.time.scale().domain([new Date(2015, 0, 1), new Date(2015, 11, 30)]).range([2, width]),
+        timeScale = d3.time.scale().domain([new Date(2015, 0, 1), new Date(2015, 12, 31)]).range([2, width]),
         tempScale = d3.scale.linear().range([height, 0]),
         colorScale = d3.scale.quantize().range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
 
@@ -62,7 +67,12 @@
         tempScale.domain([d3.min(data, function(d) { return d.recordMinTemp; }), d3.max(data, function(d) { return d.recordMaxTemp; })]);
         svg.append("g")
             .attr("class", "axis")
-            .call(tempAxis);
+            .call(tempAxis)
+            .append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 15)
+                .style("text-anchor", "end")
+                .text("Tempature (°F)")
         colorScale.domain([d3.min(data, function(d) { return d.recordMinTemp; }), d3.max(data, function(d) { return d.recordMaxTemp; })]);
 
         //Grouping
@@ -81,7 +91,7 @@
             .attr("width", dayScale.rangeBand())
             .attr("y", function(d) { return tempScale(d.recordMaxTemp); })
             .attr("height", function(d) {
-                return tempScale(d.recordMinTemp) - tempScale(d.recordMaxTemp);
+                return Math.abs(tempScale(d.recordMinTemp) - tempScale(d.recordMaxTemp));
             })
             .style("fill", "#C3BCA5");
 
@@ -92,7 +102,7 @@
             .attr("height", function(d) {
                 return tempScale(d.averageMinTemp) - tempScale(d.averageMaxTemp);
             })
-            .style("fill", "#9b9281"); 
+            .style("fill", "#9b9281");
 
         //Actual
         days.append("rect")
@@ -105,5 +115,14 @@
 
 
     });
+
+//Title
+svg.append("text")
+    .attr("class", "chartTitle")
+    .attr("x", (width + margin.left + margin.right) / 2)
+    .attr("y", 0)
+    .style("text-anchor", "middle")
+    .text("Iowa City, IA's weather (2015)");
+
     </script>
 </body>
