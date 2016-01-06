@@ -8,11 +8,10 @@
 	  font: 10px sans-serif;
 	}
 
-	.area {
-	  fill: steelblue;
-	  clip-path: url(#clip);
+	.chartTitle {
+		font: 16px sans-serif;
+		font-weight: bold;
 	}
-
 	.axis path,
 	.axis line {
 	  fill: none;
@@ -29,11 +28,11 @@
 </head>
 
 <body>
-	<script src="js/d3.js"></script>
+	<script src="//d3js.org/d3.v3.min.js"></script>
 	
 	<script>
-	var margin = {top: 10, right: 10, bottom: 100, left: 40},
-		margin2 = {top: 430, right: 10, bottom: 20, left: 40},
+	var margin = {top: 10, right: 25, bottom: 100, left: 40},
+		margin2 = {top: 430, right: 25, bottom: 20, left: 40},
 		width = 960 - margin.left - margin.right,
 		height = 500 - margin.top - margin.bottom,
 		height2 = 500 - margin2.top - margin2.bottom; 
@@ -42,28 +41,11 @@
 		x2 = d3.time.scale().range([0, width]),
 		y = d3.scale.linear().range([height, 0]),
 		y2 = d3.scale.linear().range([height2, 0]),
-		color = d3.scale.linear().range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+		color = d3.scale.quantile().range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
 	
 	var xAxis = d3.svg.axis().scale(x).orient("bottom"),
 		xAxis2 = d3.svg.axis().scale(x2).orient("bottom"),
 		yAxis = d3.svg.axis().scale(y).orient("left");
-		
-
-	var brush = d3.svg.brush().x(x2).on("brush", brushed);
-
-	
-	var record = d3.svg.area()
-        .defined(function(d) { return d.averageMinTemp > 0; })
-		.interpolate("monotone")
-		.x(function(d) { return x(d.date); })
-		.y0(function(d) { return y(+d.averageMinTemp); })
-		.y1(function(d) { return y(+d.averageMaxTemp); });
-		
-	var record2 = d3.svg.area()
-		.interpolate("monotone")
-		.x(function(d) { return x2(d.date); })
-		.y0(function(d) { return y2(+d.averageMinTemp); })
-		.y1(function(d) { return y2(+d.averageMaxTemp); });
 		
 	var svg = d3.select("body").append("svg")
 		.attr("width", width + margin.left + margin.right)
@@ -88,25 +70,61 @@
 			d.month = +d.month;
 			d.day = +d.day;
 			d.date = new Date(2015, d.month-1, d.day);
-			/*
+			
+			d.meanTemp = +d.meanTemp;
             d.maxTemp = +d.maxTemp;
             d.minTemp = +d.minTemp;
             d.averageMaxTemp = +d.averageMaxTemp;
-            d.averageMaxTemp = +d.averageMinTemp;
+            d.averageMinTemp = +d.averageMinTemp;
             d.recordMaxTemp = +d.recordMaxTemp;
-            d.recordMinTemp = +d.recordMinTemp; 
+            d.recordMinTemp = +d.recordMinTemp;
 		});
 	
 		x.domain(d3.extent(data.map(function(d) { return d.date; })));
 		y.domain([d3.min(data, function(d) { return d.recordMinTemp; }), d3.max(data, function(d) { return d.recordMaxTemp; })]);
 		x2.domain(x.domain());
 		y2.domain(y.domain());
-	    color.domain(y.domain());
+		color.domain(y.domain());
+		var brush = d3.svg.brush().x(x2).on("brush", brushed);
 		
-		focus.append("path")
-			.datum(data)
-			.attr("class", "area")
-			.attr("d", record);
+		//focus
+		var focusBars = focus.selectAll(".bars")
+			.data(data)
+			.enter()
+			.append("g")
+			.attr("class", function(d) { return "Month"+ d.month+ "Day" + d.day; })
+			.attr("clip-path", "url(#clip");
+		//Record rectangles
+		focusBars.append("rect")
+			.attr("class", "record bars")
+			.attr("width", width / data.length / 2)
+			.attr("x", function(d) { return x(d.date); })
+			.attr("height", function(d) { return Math.abs(y(d.recordMaxTemp) - y(d.recordMinTemp));	})
+			.attr("y", function(d) { return y(d.recordMaxTemp); })
+			.style("fill", "#C3BCA5");
+		//Average rectangles
+		focusBars.append("rect")
+			.attr("class", "average bars")
+			.attr("width", width / data.length / 2)
+			.attr("x", function(d) { return x(d.date); })
+			.attr("height", function(d) { return Math.abs(y(d.averageMaxTemp) - y(d.averageMinTemp));	})
+			.attr("y", function(d) { return y(d.averageMaxTemp); })
+			.style("fill", "#9b9281");
+		//Measured rectangles
+		focusBars.append("rect")
+			.attr("class", "measure bars")
+			.attr("width", width / data.length / 2)
+			.attr("x", function(d) { return x(d.date); })
+			.attr("height", function(d) { return Math.abs(y(d.maxTemp) - y(d.minTemp));	})
+			.attr("y", function(d) { return y(d.maxTemp); })
+			.style("fill", function(d) { return color(d.meanTemp); });
+		//Records 
+		/*focusBars.filter(function(d) { return (d.minTemp === d.recordMinTemp) || (d.maxTemp === d.recordMaxTemp); })
+			.append("circle")
+			.attr("cx", function(d) { return x(d.date); })
+			.attr("cy", function(d) { return y(d.meanTemp); })
+			.attr("r", 2);*/
+		
 		focus.append("g")
 		    .attr("class", "x axis")
 		    .attr("transform", "translate(0," + height + ")")
@@ -115,10 +133,29 @@
 			.attr("class", "y axis")
 			.call(yAxis);
 		
-		context.append("path")
-			.datum(data)
-			.attr("class", "area")
-			.attr("d", record2);
+		//Context
+		var contextBars = context.selectAll(".bars")
+			.data(data)
+			.enter()
+			.append("g")
+			.attr("class", function(d) { return "Month"+ d.month+ "Day" + d.day; })
+			.attr("clip-path", "url(#clip");
+		//Records
+		contextBars.append("rect")
+			.attr("class", "record bars")
+			.attr("width", width / data.length / 2)
+			.attr("x", function(d) { return x2(d.date); })
+			.attr("height", function(d) { return Math.abs(y2(d.recordMaxTemp) - y2(d.recordMinTemp));	})
+			.attr("y", function(d) { return y2(d.recordMaxTemp); })
+			.style("fill", "#C3BCA5");
+		contextBars.append("rect")
+			.attr("class", "record bars")
+			.attr("width", width / data.length / 2)
+			.attr("x", function(d) { return x2(d.date); })
+			.attr("height", function(d) { return Math.abs(y2(d.averageMaxTemp) - y2(d.averageMinTemp));	})
+			.attr("y", function(d) { return y2(d.averageMaxTemp); })
+			.style("fill", "#9b9281");
+			
 		context.append("g")
 			.attr("class", "x axis")
 			.attr("transform", "translate(0," + height2 + ")")
@@ -129,12 +166,47 @@
 		  .selectAll("rect")
 			.attr("y", -6)
 			.attr("height", height2 + 7);
+			
+			
+		function brushed() {
+			x.domain(brush.empty() ? x2.domain() : brush.extent());
+			var brushedBars = data.filter(function(d) { return (d.date > brush.extent()[0]) && (d.date < brush.extent()[1]); });
+			
+			//transitions
+			focusBars.selectAll("rect")
+				.transition()
+				.duration(100)
+				.attr("x", function(d) { return x(d.date) - (width / data.length); })
+				.each(function(d) { 
+					d3.select(this).transition()
+						.duration(100)
+						.attr("width", width / brushedBars.length / 2);
+					});
+			
+			focusBars.selectAll("text").remove();
+			if (brushedBars.length <= 31) {
+				focusBars.append("text")
+					.filter(function(d) { return (d.date > brush.extent()[0]) && (d.date < brush.extent()[1]); })
+					.attr("y", function(d) { return y(d.maxTemp); })
+					.attr("x", function(d) { return x(d.date) - (width / data.length); })
+					.text(function(d) { return d.maxTemp; })
+				focusBars.append("text")
+					.filter(function(d) { return (d.date > brush.extent()[0]) && (d.date < brush.extent()[1]); })
+					.attr("y", function(d) { return y(d.minTemp); })
+					.attr("dy", "10px")
+					.attr("x", function(d) { return x(d.date) - (width / data.length); })
+					.text(function(d) { return d.minTemp; })
+			}
+			
+			focus.select(".x.axis").call(xAxis);
+		}
 	});		
-				
-	function brushed() {
-		x.domain(brush.empty() ? x2.domain() : brush.extent());
-		focus.select(".area").attr("d", record);
-		focus.select(".x.axis").call(xAxis);
-	}
+	
+svg.append("text")
+	.attr("class", "chartTitle")
+	.attr("text-anchor", "middle")
+	.attr("x", (width + margin.left + margin.right) / 2)
+	.attr("y", margin.top * 1.25)
+	.text("Iowa City, IA Weather in Historical Perspective");
 	</script>
 </body>
