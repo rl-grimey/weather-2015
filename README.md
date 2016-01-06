@@ -1,10 +1,11 @@
 ### A NY Times inspired piece covering a year's worth of weather in perspective. 
 
 ###### Preview
-![alt tag](https://raw.github.com/ryan-p-larson/weather-2015/master/examples/Iowa%City.png)
+![Example Implementation](https://raw.github.com/ryan-p-larson/weather-2015/master/examples/Iowa%20City.png)
 
 ###### Interaction
-![alt tag](https://raw.github.com/ryan-p-larson/weather-2015/master/examples/focus.gif)
+![interactive focus & Context](https://github.com/ryan-p-larson/weather-2015/raw/master/examples/focus.gif)
+
 >*****Note:**
 > - Work in progress
 > - Data needs to be cleaned, weatherParser.py needs some revision
